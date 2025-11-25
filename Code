@@ -1,0 +1,46 @@
+import cv2
+
+face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+
+cap = cv2.VideoCapture(0)
+if not cap.isOpened():
+    print('cannot open camera')
+    raise SystemExit
+
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        break
+    h, w = frame.shape[:2]
+    new_w = 640
+    new_h = int(h * (new_w / float(w)))
+    small = cv2.resize(frame, (new_w, new_h))
+
+    gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
+    blur = cv2.GaussianBlur(gray, (5, 5), 0)
+
+    faces = face_cascade.detectMultiScale(blur, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+
+    out = small.copy()
+    found = False
+
+    for (x, y, fw, fh) in faces:
+        area = fw * fh
+        aspect = fw / float(fh) if fh != 0 else 0
+        if area > 2000 and 0.6 < aspect < 1.6:
+            cv2.rectangle(out, (x, y), (x + fw, y + fh), (0, 255, 0), 2)
+            cv2.putText(out, 'FACE', (x, y - 6), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+            found = True
+        else:
+            cv2.rectangle(out, (x, y), (x + fw, y + fh), (0, 165, 255), 1)
+            cv2.putText(out, 'SMALL', (x, y - 6), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 165, 255), 1)
+
+    status = 'ALERT' if found else 'CLEAR'
+    cv2.putText(out, 'STATUS: ' + status, (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+
+    cv2.imshow('face_detect_simple', out)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
