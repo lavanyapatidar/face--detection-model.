@@ -1,1 +1,1 @@
-# face--detection-model.
+# face-detection-model.
